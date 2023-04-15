@@ -6,6 +6,7 @@ import {
   presetAttributify,
   presetIcons,
   presetTagify,
+  presetTypography,
   presetUno,
   presetWebFonts,
   transformerAttributifyJsx,
@@ -25,6 +26,7 @@ export default defineConfig({
         presetIcons(),
         presetWebFonts(),
         presetAttributify(),
+        presetTypography(),
         presetTagify({
           prefix: 'un-'
         })
@@ -37,7 +39,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '~/': resolve(__dirname, 'src')
+      '~/': `${resolve(__dirname, 'src')}/`
     }
   }
 });
