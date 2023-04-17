@@ -1,3 +1,4 @@
+import { useAsyncState } from '@vueuse/core';
 import type { AxiosError } from 'axios';
 import { defineComponent, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -15,6 +16,10 @@ import { Swal, Toast } from '~/utils/swal';
 export default defineComponent({
   setup() {
     const router = useRouter();
+    const excludeId = useAsyncState<any[]>(
+      axios.get('/exclude.json', { baseURL: '' }).then(res => res.data),
+      []
+    );
 
     const form = reactive({
       username: '',
@@ -28,6 +33,7 @@ export default defineComponent({
           (v.length === 12 && parseInt(v).toString() === v) || '学号格式不对',
         (v: string) =>
           import.meta.env.DEV ||
+          excludeId.state.value.includes(parseInt(v)) ||
           parseInt(v.slice(0, 4)) <= 2019 ||
           '本次活动仅限19级前的毕业生参加，如有特殊情况请联系主办方'
       ],

@@ -16,9 +16,11 @@ axios.interceptors.request.use(config => {
 axios.interceptors.response.use(
   res => res,
   (err: AxiosError) => {
-    if (err.response?.status.toString().startsWith('4')) {
+    if (err.response?.status === 401) {
       localStorage.removeItem('access_token');
-      location.reload();
+      if (!location.hash.startsWith('#/login')) {
+        location.reload();
+      }
     }
     return Promise.reject(err);
   }

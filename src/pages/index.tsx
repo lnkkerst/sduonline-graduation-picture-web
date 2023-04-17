@@ -5,7 +5,7 @@ import RegistrationForm from '~/components/RegistrationForm';
 
 export default defineComponent({
   setup() {
-    const dialog = ref(!useStorage('note-dialog-nerver-show', false));
+    const dialog = ref(!useStorage('note-dialog-never-show', false).value);
 
     return () => (
       <div>
