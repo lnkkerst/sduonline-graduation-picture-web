@@ -22,6 +22,14 @@ axios.interceptors.response.use(
         location.reload();
       }
     }
+    if (err.response?.status === 404) {
+      if ((err.response.data as any)?.detail === 'User not found') {
+        localStorage.removeItem('access_token');
+        if (!location.hash.startsWith('#/login')) {
+          location.reload();
+        }
+      }
+    }
     return Promise.reject(err);
   }
 );

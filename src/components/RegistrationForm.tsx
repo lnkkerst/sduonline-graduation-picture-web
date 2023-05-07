@@ -22,6 +22,7 @@ interface InputForm {
   gender: string;
   signedUp: boolean;
   phoneNumber: string;
+  qq: string;
   multiPerson: boolean;
   dateTime: {
     id: string;
@@ -43,6 +44,7 @@ export default defineComponent({
       gender: '',
       signedUp: false,
       phoneNumber: '',
+      qq: '',
       multiPerson: false,
       dateTime: {
         id: '',
@@ -55,16 +57,6 @@ export default defineComponent({
         name: ''
       }
     });
-    const rules = {
-      phoneNumber: [
-        (v: string) => !!v.match(/^1\d{10}$/) || '手机号格式不正确'
-      ],
-      campus: [(v: string) => !!v || '校区不能为空'],
-      date: [(v: string) => !!v || '日期不能为空'],
-      time: [(v: string) => !!v || '时间不能为空'],
-      gender: [(v: string) => !!v || '性别不能为空'],
-      multiPerson: [(v: string) => v !== null || '是否允许多人拍摄不能为空']
-    };
     const formEl = ref<VForm | null>(null);
     const { state, isLoading, execute } = useAsyncState(
       () =>
@@ -76,6 +68,7 @@ export default defineComponent({
             gender,
             multi_person: multiPerson,
             phone_number: phoneNumber,
+            qq,
             time: dateTime
           } = res.data;
           let date = '';
@@ -97,9 +90,10 @@ export default defineComponent({
             gender,
             signedUp,
             phoneNumber,
+            qq,
             multiPerson,
             dateTime: {
-              id: dateTime.id,
+              id: dateTime?.id,
               time,
               date,
               ori: dateTime
@@ -142,7 +136,11 @@ export default defineComponent({
         if (dateTime.date === form.value.dateTime.date) {
           res.push({
             id: x.id,
-            time: `${dateTime.time} - 剩余${x.capacity}`,
+            time: `${dateTime.time} - 剩余${x.capacity} ${
+              form.value.signedUp && x.id === state.value?.time?.id
+                ? ' - ✓ 已选择'
+                : ''
+            }`,
             capacity: x.capacity
           });
         }
@@ -150,6 +148,34 @@ export default defineComponent({
       return res;
     });
     const submitting = ref(false);
+    const rules = {
+      phoneNumber: [
+        (v: string) => !!v || '手机号不能为空',
+        (v: string) => !!v.match(/^1\d{10}$/) || '手机号格式不正确'
+      ],
+      qq: [
+        (v: string) => !!v || 'QQ 号码不能为空',
+
+        (v: string) => !!v.match(/^\d+$/) || 'QQ 号码格式不正确'
+      ],
+      campus: [(v: string) => !!v || '校区不能为空'],
+      date: [(v: string) => !!v || '日期不能为空'],
+      time: [
+        (v: string) => !!v || '时间不能为空',
+        async (v: string) => {
+          const time = timeList.value.find(time => time.id === v);
+          if (!time) {
+            return true;
+          }
+          if (time.id !== state.value?.time?.id && !(time.capacity >= 0.9)) {
+            return '时间不可用';
+          }
+          return true;
+        }
+      ],
+      gender: [(v: string) => !!v || '性别不能为空'],
+      multiPerson: [(v: string) => v !== null || '是否允许多人拍摄不能为空']
+    };
 
     async function handleSignUp() {
       if (!formEl.value) {
@@ -165,7 +191,8 @@ export default defineComponent({
         phone_number: form.value.phoneNumber,
         gender: form.value.gender,
         multi_person: form.value.multiPerson,
-        time_id: form.value.dateTime.id
+        time_id: form.value.dateTime.id,
+        qq: form.value.qq
       };
       await axios
         .put('/user', data)
@@ -196,7 +223,7 @@ export default defineComponent({
     }
 
     watch(
-      () => form.value.campus.id,
+      () => form.value.campus?.id,
       (val, old) => {
         if (val === old) {
           return;
@@ -208,7 +235,7 @@ export default defineComponent({
       }
     );
     watch(
-      () => form.value.dateTime.date,
+      () => form.value.dateTime?.date,
       (val, old) => {
         if (val === old) {
           return;
@@ -255,6 +282,11 @@ export default defineComponent({
               v-model={form.value.phoneNumber}
               rules={rules.phoneNumber}
             ></VTextField>
+            <VTextField
+              label="QQ 号码"
+              v-model={form.value.qq}
+              rules={rules.qq}
+            ></VTextField>
 
             <VRadioGroup
               inline
@@ -268,7 +300,7 @@ export default defineComponent({
 
             <VRadioGroup
               inline
-              label="是否多人拍摄"
+              label="是否多人拍摄（限制 3-5 人合照）"
               v-model={form.value.multiPerson}
               rules={rules.multiPerson}
             >
@@ -301,6 +333,10 @@ export default defineComponent({
               itemValue="id"
               rules={rules.time}
             ></VSelect>
+
+            <p text="gray sm" pl="sm">
+              拍摄完会进行采访
+            </p>
 
             <div grid place-items-center min-h="16">
               {submitting.value ? (
